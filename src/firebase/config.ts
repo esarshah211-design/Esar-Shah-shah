@@ -1,11 +1,16 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+
+// Explicitly set browserLocalPersistence so authentication survives redirects and page reloads
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.warn('Set auth persistence note:', err);
+});
 
 // Connection test on boot as required by Firestore integration
 export async function testConnection() {

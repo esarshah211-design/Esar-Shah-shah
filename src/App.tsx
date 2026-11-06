@@ -158,6 +158,21 @@ function BurgerBiteApp() {
 
   // If in Admin Mode
   if (currentView === 'admin') {
+    if (authLoading) {
+      return (
+        <div className="min-h-screen bg-[#101010] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#E63932] flex items-center justify-center animate-pulse shadow-lg shadow-[#E63932]/30">
+              <span className="font-bebas text-2xl text-white">BB</span>
+            </div>
+            <p className="text-xs text-[#B8B8B8] font-bold tracking-wide">
+              Verifying Administrator Access...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     if (!isAdmin) {
       return <AdminLogin onBackToWebsite={() => navigateToView('public')} />;
     }
