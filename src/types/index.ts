@@ -96,6 +96,8 @@ export interface WebsiteSettings {
   facebookUrl?: string;
   instagramUrl?: string;
   tiktokUrl?: string;
+  passkeyHash?: string;
+  passkeyUpdatedAt?: string;
   updatedAt?: string;
 }
 

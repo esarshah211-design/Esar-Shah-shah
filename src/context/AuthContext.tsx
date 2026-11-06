@@ -8,8 +8,9 @@ import {
   GoogleAuthProvider,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
+import { hashPasskey, verifyPasskey, DEFAULT_PASSKEY } from '../utils/security';
 
 interface AuthContextType {
   user: User | null;
@@ -17,11 +18,18 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   authNotice: string | null;
+  isCustomPasskeyActive: boolean;
   signInWithGoogle: (preferRedirect?: boolean) => Promise<void>;
   signInWithGoogleRedirect: () => Promise<void>;
   signOut: () => Promise<void>;
-  simulateAdminLogin: (passcode: string) => boolean;
+  simulateAdminLogin: (passcode: string) => Promise<boolean>;
   grantAdminAccessToCurrentUser: (passcode: string) => Promise<boolean>;
+  changeAdminPasskey: (
+    currentPasskey: string,
+    newPasskey: string,
+    confirmPasskey: string
+  ) => Promise<{ success: boolean; message: string }>;
+  resetAdminPasskeyToDefault: (currentPasskey: string) => Promise<boolean>;
   clearAuthError: () => void;
 }
 
@@ -29,7 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Bootstrapped admin email from metadata and owner
 export const BOOTSTRAP_ADMIN_EMAIL = 'esarshah211@gmail.com';
-export const ADMIN_PASSCODE = 'burgerbite2026';
+export { DEFAULT_PASSKEY };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -39,6 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [activePasskeyHash, setActivePasskeyHash] = useState<string | null>(() => {
+    return localStorage.getItem('burger_bite_passkey_hash');
+  });
 
   // Helper function to create configured Google Auth Provider
   const createGoogleProvider = () => {
@@ -70,7 +81,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const adminDoc = await getDoc(doc(db, 'admins', currentUser.uid));
         hasAdminDoc = adminDoc.exists();
       } catch (firestoreErr) {
-        // If read fails due to security rules when not an admin yet, that is expected
         console.warn('Admin doc check notice:', firestoreErr);
       }
 
@@ -125,6 +135,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
 
+    // Listen to passkeyHash in websiteSettings/default
+    const unsubSettings = onSnapshot(
+      doc(db, 'websiteSettings', 'default'),
+      (snap) => {
+        if (!isMounted) return;
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.passkeyHash) {
+            setActivePasskeyHash(data.passkeyHash);
+            localStorage.setItem('burger_bite_passkey_hash', data.passkeyHash);
+          } else if (data.passkeyHash === null) {
+            setActivePasskeyHash(null);
+            localStorage.removeItem('burger_bite_passkey_hash');
+          }
+        }
+      },
+      (err) => {
+        console.warn('Settings passkey listener notice:', err);
+      }
+    );
+
     // Check redirect result on mount (essential for Netlify & mobile when redirect mode is used)
     getRedirectResult(auth)
       .then(async (result) => {
@@ -158,6 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       isMounted = false;
+      unsubSettings();
       unsubscribe();
     };
   }, []);
@@ -182,7 +214,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (popupErr: any) {
       console.warn('Google popup error:', popupErr);
 
-      // Check if popup was blocked, closed, or failed due to third-party cookies / COOP
       const isPopupClosedOrBlocked =
         popupErr.code === 'auth/popup-closed-by-user' ||
         popupErr.code === 'auth/popup-blocked' ||
@@ -191,9 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         popupErr.code === 'auth/network-request-failed';
 
       if (isPopupClosedOrBlocked) {
-        console.log('Falling back to signInWithRedirect due to popup environment constraints...');
         setAuthNotice('Popup blocked or closed by browser. Redirecting to Google Sign-In...');
-        // Seamless fallback to redirect
         await signInWithRedirect(auth, provider);
       } else {
         setError(popupErr?.message || 'Google Sign-in failed. Please try again.');
@@ -209,8 +238,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithRedirect(auth, provider);
   };
 
-  const simulateAdminLogin = (passcode: string): boolean => {
-    if (passcode.trim() === ADMIN_PASSCODE || passcode.trim() === 'admin123') {
+  const simulateAdminLogin = async (passcode: string): Promise<boolean> => {
+    const storedHash = activePasskeyHash || localStorage.getItem('burger_bite_passkey_hash');
+    const isValid = await verifyPasskey(passcode, storedHash);
+
+    if (isValid) {
       setIsAdmin(true);
       sessionStorage.setItem('burger_bite_admin_session', 'true');
       setError(null);
@@ -222,13 +254,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const grantAdminAccessToCurrentUser = async (passcode: string): Promise<boolean> => {
-    if (passcode.trim() === ADMIN_PASSCODE || passcode.trim() === 'admin123') {
+    const storedHash = activePasskeyHash || localStorage.getItem('burger_bite_passkey_hash');
+    const isValid = await verifyPasskey(passcode, storedHash);
+
+    if (isValid) {
       setIsAdmin(true);
       sessionStorage.setItem('burger_bite_admin_session', 'true');
       setError(null);
       setAuthNotice(null);
 
-      // If user is currently signed in, also register their UID in admins collection
+      // Register UID in admins collection
       if (user) {
         try {
           await setDoc(
@@ -249,6 +284,88 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setError('Incorrect security key. Access denied.');
     return false;
+  };
+
+  const changeAdminPasskey = async (
+    currentPasskey: string,
+    newPasskey: string,
+    confirmPasskey: string
+  ): Promise<{ success: boolean; message: string }> => {
+    if (!currentPasskey || !currentPasskey.trim()) {
+      throw new Error('Please enter your current admin passkey.');
+    }
+
+    const storedHash = activePasskeyHash || localStorage.getItem('burger_bite_passkey_hash');
+    const isCurrentValid = await verifyPasskey(currentPasskey, storedHash);
+    if (!isCurrentValid) {
+      throw new Error('Current passkey is incorrect. Verification failed.');
+    }
+
+    const cleanNew = newPasskey.trim();
+    if (cleanNew.length < 6) {
+      throw new Error('New passkey must be at least 6 characters long.');
+    }
+
+    if (cleanNew !== confirmPasskey.trim()) {
+      throw new Error('New passkey and confirmation do not match.');
+    }
+
+    const isSameAsCurrent = await verifyPasskey(cleanNew, storedHash);
+    if (isSameAsCurrent) {
+      throw new Error('New passkey must be different from your current passkey.');
+    }
+
+    // Compute cryptographic salted hash
+    const newHash = await hashPasskey(cleanNew);
+
+    // Save in local storage cache
+    localStorage.setItem('burger_bite_passkey_hash', newHash);
+    setActivePasskeyHash(newHash);
+
+    // Persist to Firestore websiteSettings
+    try {
+      await setDoc(
+        doc(db, 'websiteSettings', 'default'),
+        {
+          passkeyHash: newHash,
+          passkeyUpdatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.warn('Firestore passkey save notice:', err);
+    }
+
+    return {
+      success: true,
+      message: 'Admin passkey successfully updated! The new passkey is now required for login.',
+    };
+  };
+
+  const resetAdminPasskeyToDefault = async (currentPasskey: string): Promise<boolean> => {
+    const storedHash = activePasskeyHash || localStorage.getItem('burger_bite_passkey_hash');
+    const isCurrentValid = await verifyPasskey(currentPasskey, storedHash);
+    if (!isCurrentValid) {
+      throw new Error('Current passkey is incorrect. Verification failed.');
+    }
+
+    localStorage.removeItem('burger_bite_passkey_hash');
+    setActivePasskeyHash(null);
+
+    try {
+      await setDoc(
+        doc(db, 'websiteSettings', 'default'),
+        {
+          passkeyHash: null,
+          passkeyUpdatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } catch (e) {
+      console.warn('Firestore reset notice:', e);
+    }
+
+    return true;
   };
 
   const clearAuthError = () => {
@@ -277,11 +394,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         error,
         authNotice,
+        isCustomPasskeyActive: Boolean(activePasskeyHash),
         signInWithGoogle,
         signInWithGoogleRedirect,
         signOut,
         simulateAdminLogin,
         grantAdminAccessToCurrentUser,
+        changeAdminPasskey,
+        resetAdminPasskeyToDefault,
         clearAuthError,
       }}
     >

@@ -28,6 +28,7 @@ export const AdminLogin: React.FC<Props> = ({ onBackToWebsite }) => {
     authNotice,
     user,
     isAdmin,
+    isCustomPasskeyActive,
     clearAuthError,
   } = useAuth();
 
@@ -37,7 +38,7 @@ export const AdminLogin: React.FC<Props> = ({ onBackToWebsite }) => {
   const [redirecting, setRedirecting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const handlePasscodeSubmit = (e: React.FormEvent) => {
+  const handlePasscodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
     clearAuthError();
@@ -46,17 +47,20 @@ export const AdminLogin: React.FC<Props> = ({ onBackToWebsite }) => {
       return;
     }
 
-    if (user && !isAdmin) {
-      grantAdminAccessToCurrentUser(passcode).then((success) => {
+    try {
+      if (user && !isAdmin) {
+        const success = await grantAdminAccessToCurrentUser(passcode);
         if (!success) {
           setLoginError('Invalid admin security key. Access denied.');
         }
-      });
-    } else {
-      const success = simulateAdminLogin(passcode);
-      if (!success) {
-        setLoginError('Access denied: Invalid admin passkey. Please check credentials.');
+      } else {
+        const success = await simulateAdminLogin(passcode);
+        if (!success) {
+          setLoginError('Access denied: Invalid admin passkey. Please check credentials.');
+        }
       }
+    } catch (err: any) {
+      setLoginError(err?.message || 'Authentication error.');
     }
   };
 
@@ -287,16 +291,27 @@ export const AdminLogin: React.FC<Props> = ({ onBackToWebsite }) => {
                       <KeyRound className="w-4 h-4 text-[#777] absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="password"
-                        placeholder="Enter security key (default: burgerbite2026)"
+                        placeholder={
+                          isCustomPasskeyActive
+                            ? 'Enter active store passkey'
+                            : 'Enter security key (default: burgerbite2026)'
+                        }
                         value={passcode}
                         onChange={(e) => setPasscode(e.target.value)}
                         className="w-full bg-[#101010] border border-[#2e2e2e] focus:border-[#E63932] rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-[#555] outline-none transition-all"
                       />
                     </div>
                     <p className="text-[11px] text-[#888] mt-1.5 flex items-center justify-between">
-                      <span>
-                        Store default key: <code className="text-[#E63932] font-mono">burgerbite2026</code>
-                      </span>
+                      {isCustomPasskeyActive ? (
+                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Custom store passkey is active</span>
+                        </span>
+                      ) : (
+                        <span>
+                          Store default key: <code className="text-[#E63932] font-mono">burgerbite2026</code>
+                        </span>
+                      )}
                     </p>
                   </div>
 
