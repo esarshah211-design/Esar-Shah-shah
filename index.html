@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BURGER BITE - Premium Fast Food Restaurant & Admin Dashboard</title>
+    <meta name="description" content="Premium fast food restaurant in Mian Gujar, Peshawar. Explore signature burgers, loaded fries, meal deals, online ordering via WhatsApp/Checkout, and full administrative store management." />
+    <meta property="og:title" content="BURGER BITE - Premium Fast Food Restaurant & Admin Dashboard" />
+    <meta property="og:description" content="Premium fast food restaurant in Mian Gujar, Peshawar. Explore signature burgers, loaded fries, meal deals, online ordering via WhatsApp/Checkout, and full administrative store management." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <!-- Google Fonts: Bebas Neue and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Restaurant Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FastFoodRestaurant",
+      "name": "BURGER BITE",
+      "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80",
+      "telephone": "+92 311 9598182",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Mian Gujar",
+        "addressLocality": "Peshawar",
+        "addressRegion": "Khyber Pakhtunkhwa",
+        "addressCountry": "PK"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "34.0151",
+        "longitude": "71.5249"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ],
+          "opens": "16:00",
+          "closes": "22:00"
+        }
+      ],
+      "servesCuisine": "Fast Food, Burgers, Fries, Shakes",
+      "priceRange": "$$"
+    }
+    </script>
+  </head>
+  <body class="bg-[#101010] text-[#FFFFFF] font-sans antialiased selection:bg-[#E63932] selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

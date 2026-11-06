@@ -1,0 +1,158 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrator account with management privileges",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Admin Firebase Auth UID" },
+        "email": { "type": "string", "description": "Admin email address" },
+        "role": { "type": "string", "enum": ["admin", "superadmin"], "description": "Access role" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of creation" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Fast food menu item served at Burger Bite",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 100, "description": "Name of the dish" },
+        "description": { "type": "string", "maxLength": 500, "description": "Description of ingredients and taste" },
+        "price": { "type": "number", "description": "Price in PKR" },
+        "category": { "type": "string", "description": "Category name or ID" },
+        "imageUrl": { "type": "string", "description": "Photo URL or image data URL" },
+        "isAvailable": { "type": "boolean", "description": "Whether item can currently be ordered" },
+        "isFeatured": { "type": "boolean", "description": "Highlighted on hero or popular items" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" }
+      },
+      "required": ["name", "price", "category", "isAvailable"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Menu category (Burgers, Loaded Fries, Meal Deals, Shakes, Drinks)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 50, "description": "Category display name" },
+        "displayOrder": { "type": "number", "description": "Sort order index" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["name"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer food order",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "minLength": 2, "maxLength": 100, "description": "Customer name" },
+        "phone": { "type": "string", "minLength": 7, "maxLength": 25, "description": "Contact phone number" },
+        "address": { "type": "string", "maxLength": 300, "description": "Delivery address (if delivery)" },
+        "orderType": { "type": "string", "enum": ["pickup", "delivery"], "description": "Pickup or delivery preference" },
+        "items": { "type": "array", "description": "List of ordered items with quantity and price" },
+        "totalAmount": { "type": "number", "description": "Total order amount in PKR" },
+        "notes": { "type": "string", "maxLength": 500, "description": "Special cooking or delivery notes" },
+        "status": {
+          "type": "string",
+          "enum": ["New", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"],
+          "description": "Live status of the order"
+        },
+        "createdAt": { "type": "string", "description": "Timestamp when order was placed" },
+        "updatedAt": { "type": "string", "description": "Timestamp of last status change" }
+      },
+      "required": ["customerName", "phone", "orderType", "items", "totalAmount", "status"]
+    },
+    "Enquiry": {
+      "title": "Enquiry",
+      "description": "Contact message or general question from a customer",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 100, "description": "Sender name" },
+        "email": { "type": "string", "description": "Sender email" },
+        "phone": { "type": "string", "description": "Sender phone number" },
+        "message": { "type": "string", "minLength": 5, "maxLength": 1000, "description": "Enquiry message body" },
+        "status": { "type": "string", "enum": ["unread", "read"], "description": "Review status" },
+        "createdAt": { "type": "string", "description": "Submission timestamp" }
+      },
+      "required": ["name", "message", "status"]
+    },
+    "GalleryItem": {
+      "title": "GalleryItem",
+      "description": "High resolution photograph in the Burger Bite visual gallery",
+      "type": "object",
+      "properties": {
+        "imageUrl": { "type": "string", "description": "Image URL or data" },
+        "caption": { "type": "string", "maxLength": 200, "description": "Photo caption" },
+        "displayOrder": { "type": "number", "description": "Sort order" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["imageUrl"]
+    },
+    "WebsiteSettings": {
+      "title": "WebsiteSettings",
+      "description": "Global restaurant settings, contact information, and editable content",
+      "type": "object",
+      "properties": {
+        "heroTitle": { "type": "string", "maxLength": 200, "description": "Hero section title" },
+        "heroSubtitle": { "type": "string", "maxLength": 500, "description": "Hero section description" },
+        "phone": { "type": "string", "maxLength": 50, "description": "Main business phone" },
+        "whatsappNumber": { "type": "string", "maxLength": 50, "description": "Order WhatsApp phone number" },
+        "address": { "type": "string", "maxLength": 200, "description": "Physical restaurant location" },
+        "openingHours": { "type": "string", "maxLength": 100, "description": "Business operating hours" },
+        "aboutText": { "type": "string", "maxLength": 2000, "description": "About section story and details" },
+        "deliveryActive": { "type": "boolean", "description": "Whether home delivery is currently enabled" },
+        "deliveryFee": { "type": "number", "description": "Flat delivery fee in PKR" },
+        "updatedAt": { "type": "string", "description": "Last updated timestamp" }
+      },
+      "required": ["heroTitle", "phone", "address", "openingHours"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Customer dining review or testimonial",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "maxLength": 100, "description": "Customer name" },
+        "rating": { "type": "number", "description": "Star rating 1-5" },
+        "reviewText": { "type": "string", "maxLength": 500, "description": "Review details" },
+        "date": { "type": "string", "description": "Date or relative date string" },
+        "isApproved": { "type": "boolean", "description": "Approved by admin for public display" },
+        "isFeatured": { "type": "boolean", "description": "Featured in highlight reel" }
+      },
+      "required": ["customerName", "rating", "reviewText", "isApproved"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Admin user profile"
+    },
+    "/menuItems/{itemId}": {
+      "schema": { "$ref": "#/entities/MenuItem" },
+      "description": "Burger Bite food menu items"
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Menu categories"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer food orders"
+    },
+    "/enquiries/{enquiryId}": {
+      "schema": { "$ref": "#/entities/Enquiry" },
+      "description": "Customer enquiries and contact messages"
+    },
+    "/gallery/{galleryId}": {
+      "schema": { "$ref": "#/entities/GalleryItem" },
+      "description": "Food gallery photographs"
+    },
+    "/websiteSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/WebsiteSettings" },
+      "description": "Global website configuration and editable content"
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Customer reviews and testimonials"
+    }
+  }
+}

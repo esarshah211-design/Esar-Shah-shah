@@ -1,0 +1,6 @@
+{
+  "name": "BURGER BITE - Premium Fast Food Restaurant & Admin Dashboard",
+  "description": "Premium fast food restaurant in Mian Gujar, Peshawar. Explore signature burgers, loaded fries, meal deals, online ordering via WhatsApp/Checkout, and full administrative store management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

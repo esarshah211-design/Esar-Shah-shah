@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --font-bebas: "Bebas Neue", cursive, sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --color-primary: #171717;
+  --color-secondary: #252525;
+  --color-accent: #E63932;
+  --color-dark-bg: #101010;
+  --color-card-bg: #222222;
+  --color-muted-text: #B8B8B8;
+}
+
+.font-bebas {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom scrollbar for modern dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #101010;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E63932;
+}
